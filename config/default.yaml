@@ -1,5 +1,5 @@
 ollama:
-  host: 192.168.1.142
+  host: localhost
   port: 11434
   timeout: 30000
   maxConcurrentRequests: 4
