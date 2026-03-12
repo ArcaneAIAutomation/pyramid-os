@@ -30,6 +30,7 @@
     "@pyramid-os/data-layer": "workspace:*",
     "@pyramid-os/orchestration": "workspace:*",
     "@pyramid-os/society-engine": "workspace:*",
+    "@pyramid-os/minecraft-controller": "workspace:*",
     "@pyramid-os/api": "workspace:*",
     "fastify": "^5.2.0"
   },

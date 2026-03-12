@@ -11,6 +11,7 @@ import { loadConfig } from '@pyramid-os/shared-types';
 import { createLogger } from '@pyramid-os/logger';
 import type { Logger, LogLevel } from '@pyramid-os/logger';
 import { DatabaseManager, AgentRepository, TaskRepository, ResourceRepository, BlueprintRepository, SnapshotManager, CivilizationManager } from '@pyramid-os/data-layer';
+import { ServerConnector, BotManager } from '@pyramid-os/minecraft-controller';
 import { OpenClawImpl } from '@pyramid-os/orchestration';
 import { SocietyEngine } from '@pyramid-os/society-engine';
 import { createServer, registerRoutes, WebSocketServer } from '@pyramid-os/api';
@@ -23,6 +24,7 @@ export interface PyramidOSContext {
   societyEngine: SocietyEngine;
   server: FastifyInstance;
   wsServer: WebSocketServer;
+  botManager: BotManager;
 }
 
 /**
@@ -103,7 +105,29 @@ export async function main(): Promise<PyramidOSContext> {
   await server.listen({ port: config.api.port, host: '0.0.0.0' });
   logger.info(`API server listening on port ${config.api.port}`);
 
-  // 8. Register graceful shutdown handlers
+  // 9. Spawn Mineflayer bots for each connection profile
+  const serverConnector = new ServerConnector(config.connections, logger);
+  const botManager = new BotManager({ serverConnector, logger });
+
+  for (const profile of config.connections) {
+    try {
+      logger.info(`Spawning bot for connection: ${profile.name} (${profile.host}:${profile.port})`);
+      const bot = await botManager.connectBot(profile, 'builder');
+      logger.info(`Bot connected: ${bot.id} → ${profile.host}:${profile.port}`);
+
+      // Broadcast bot:connect event over WebSocket
+      wsServer.broadcast({
+        type: 'bot:connect',
+        botId: bot.id,
+        server: `${profile.host}:${profile.port}`,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn(`Failed to connect bot for ${profile.name}: ${msg}`);
+    }
+  }
+
+  // 10. Register graceful shutdown handlers
   const context: PyramidOSContext = {
     logger,
     db,
@@ -111,6 +135,7 @@ export async function main(): Promise<PyramidOSContext> {
     societyEngine,
     server,
     wsServer,
+    botManager,
   };
 
   registerShutdownHandlers(context);
@@ -118,7 +143,6 @@ export async function main(): Promise<PyramidOSContext> {
   logger.info('PYRAMID OS startup complete');
   return context;
 }
-
 /**
  * Register SIGINT and SIGTERM handlers for graceful shutdown.
  * Saves all state before terminating.
@@ -143,11 +167,15 @@ function registerShutdownHandlers(ctx: PyramidOSContext): void {
       await ctx.server.close();
       ctx.logger.info('API server closed');
 
-      // 3. Shutdown OpenClaw (persists all agent states)
+      // 3. Disconnect all bots
+      await ctx.botManager.shutdown();
+      ctx.logger.info('Bots disconnected');
+
+      // 4. Shutdown OpenClaw (persists all agent states)
       await ctx.openclaw.shutdown();
       ctx.logger.info('OpenClaw shutdown complete');
 
-      // 4. Close database
+      // 5. Close database
       ctx.db.close();
       ctx.logger.info('Database closed');
 
