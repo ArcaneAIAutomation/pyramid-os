@@ -175,6 +175,7 @@ function generateDashboardHtml(apiPort: number, apiKey: string): string {
   // ── State ──────────────────────────────────────────────────────────
   const state = {
     agents: [],
+    agentActivity: new Map(), // agentId → { role, decision, timestamp }
     builds: [],
     resources: [],
     tasks: [],
@@ -228,6 +229,10 @@ function generateDashboardHtml(apiPort: number, apiKey: string): string {
     switch (ev.type) {
       case 'agent:state':
         updateAgentInState(ev.agentId, ev.state);
+        renderAgents();
+        break;
+      case 'agent:activity':
+        state.agentActivity.set(ev.agentId, { role: ev.role, decision: ev.decision, timestamp: ev.timestamp });
         renderAgents();
         break;
       case 'resource:update':
@@ -342,8 +347,15 @@ function generateDashboardHtml(apiPort: number, apiKey: string): string {
     if (!state.agents.length) { c.innerHTML = '<span class="dim">No agents registered</span>'; return; }
     c.innerHTML = state.agents.map(a => {
       const status = typeof a.status === 'string' ? a.status : (a.status?.phase ?? 'idle');
-      const cls = status === 'active' || status === 'running' ? 'ok' : status === 'error' ? 'err' : 'warn';
-      return '<div class="row"><span>' + esc(a.id || a.name || 'agent') + '</span><span class="badge ' + status + '">' + esc(status) + '</span></div>';
+      const role = a.role ?? a.id ?? 'agent';
+      const activity = state.agentActivity.get(a.id);
+      const decisionHtml = activity?.decision
+        ? '<div style="font-size:11px;color:var(--sandstone);margin-top:2px;padding-left:4px;border-left:2px solid var(--copper);white-space:pre-wrap;word-break:break-word;">' + esc(activity.decision) + '</div>'
+        : '';
+      const timeHtml = activity?.timestamp
+        ? '<span style="font-size:10px;color:rgba(194,178,128,0.4);margin-left:6px;">' + new Date(activity.timestamp).toLocaleTimeString() + '</span>'
+        : '';
+      return '<div style="margin-bottom:6px;"><div class="row"><span style="font-weight:bold;">' + esc(role) + timeHtml + '</span><span class="badge ' + status + '">' + esc(status) + '</span></div>' + decisionHtml + '</div>';
     }).join('');
   }
 

@@ -9,7 +9,9 @@ export async function agentRoutes(server: FastifyInstance, ctx: ServiceContext):
       const filter: Record<string, string> = {};
       if (tier) filter['tier'] = tier;
       if (role) filter['role'] = role;
-      if (status) filter['status'] = status;
+      // Default to active agents only — pass status=all to see everything
+      filter['status'] = status === 'all' ? '' : (status ?? 'active');
+      if (!filter['status']) delete filter['status'];
       if (civilizationId) filter['civilizationId'] = civilizationId;
       return ctx.agentRepository.findAll(filter as any);
     }

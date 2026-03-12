@@ -22,6 +22,13 @@ const OllamaConfigSchema = z.object({
     .number()
     .int()
     .positive('ollama.maxConcurrentRequests must be greater than 0'),
+  models: z
+    .object({
+      planner: z.string().optional(),
+      operational: z.string().optional(),
+      worker: z.string().optional(),
+    })
+    .optional(),
 });
 
 const ConnectionProfileSchema = z.object({

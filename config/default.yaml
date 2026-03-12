@@ -1,8 +1,12 @@
 ollama:
   host: localhost
   port: 11434
-  timeout: 30000
-  maxConcurrentRequests: 4
+  timeout: 300000
+  maxConcurrentRequests: 1
+  models:
+    planner: qwen3
+    operational: qwen3
+    worker: qwen3
 
 connections:
   - name: local

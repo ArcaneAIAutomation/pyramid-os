@@ -25,6 +25,7 @@ export interface PyramidOSContext {
   server: FastifyInstance;
   wsServer: WebSocketServer;
   botManager: BotManager;
+  tickLoop: ReturnType<typeof setInterval>;
 }
 
 /**
@@ -67,6 +68,16 @@ export async function main(): Promise<PyramidOSContext> {
   const blueprintRepository = new BlueprintRepository(sqliteDb);
   const civilizationManager = new CivilizationManager(sqliteDb);
   const snapshotManager = new SnapshotManager(db, config.workspace.snapshotsDir ?? 'data/snapshots', 'default');
+
+  // Purge stale stopped agents and reset all active agents to stopped before restore
+  const purgedStopped = agentRepository.deleteByStatus('stopped');
+  if (purgedStopped > 0) {
+    logger.info(`Purged ${purgedStopped} stale stopped agent records from DB`);
+  }
+  // Mark all currently-active agents as stopped — openclaw.initialize() will restore the canonical set
+  agentRepository.findAll({ status: 'active' }).forEach((a) => {
+    agentRepository.updateStatus(a.id, 'stopped');
+  });
 
   // 5. Initialize OpenClaw orchestrator
   const openclaw = new OpenClawImpl(logger, agentRepository);
@@ -127,7 +138,19 @@ export async function main(): Promise<PyramidOSContext> {
     }
   }
 
-  // 10. Register graceful shutdown handlers
+  // 10. Start agent tick loop — calls Ollama LLM for each active agent every 5 minutes
+  const TICK_INTERVAL_MS = 5 * 60_000;
+  const tickLoop = setInterval(() => {
+    openclaw.tickAllAgents((event) => wsServer.broadcast(event as Parameters<typeof wsServer.broadcast>[0])).catch((err: unknown) => {
+      logger.error(
+        'Agent tick loop error',
+        err instanceof Error ? err : new Error(String(err)),
+      );
+    });
+  }, TICK_INTERVAL_MS);
+  logger.info(`Agent tick loop started (interval: ${TICK_INTERVAL_MS}ms)`);
+
+  // 11. Register graceful shutdown handlers
   const context: PyramidOSContext = {
     logger,
     db,
@@ -136,6 +159,7 @@ export async function main(): Promise<PyramidOSContext> {
     server,
     wsServer,
     botManager,
+    tickLoop,
   };
 
   registerShutdownHandlers(context);
@@ -159,23 +183,27 @@ function registerShutdownHandlers(ctx: PyramidOSContext): void {
     ctx.logger.info(`Received ${signal} — initiating graceful shutdown`);
 
     try {
-      // 1. Close WebSocket connections
+      // 1. Stop tick loop
+      clearInterval(ctx.tickLoop);
+      ctx.logger.info('Agent tick loop stopped');
+
+      // 2. Close WebSocket connections
       ctx.wsServer.close();
       ctx.logger.info('WebSocket server closed');
 
-      // 2. Stop API server
+      // 3. Stop API server
       await ctx.server.close();
       ctx.logger.info('API server closed');
 
-      // 3. Disconnect all bots
+      // 4. Disconnect all bots
       await ctx.botManager.shutdown();
       ctx.logger.info('Bots disconnected');
 
-      // 4. Shutdown OpenClaw (persists all agent states)
+      // 5. Shutdown OpenClaw (persists all agent states)
       await ctx.openclaw.shutdown();
       ctx.logger.info('OpenClaw shutdown complete');
 
-      // 5. Close database
+      // 6. Close database
       ctx.db.close();
       ctx.logger.info('Database closed');
 

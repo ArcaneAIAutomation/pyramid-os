@@ -26,6 +26,14 @@ import type { LLMRouterConfig } from './llm-router.js';
 import { SafetyEnforcerImpl } from './safety-enforcer.js';
 import { MessageBusImpl } from './message-bus.js';
 import { ModeControllerImpl } from './mode-controller.js';
+import { BaseAgent } from './agents/base-agent.js';
+import { PharaohAgent } from './agents/pharaoh-agent.js';
+import { VizierAgent } from './agents/vizier-agent.js';
+import { ArchitectAgent } from './agents/architect-agent.js';
+import { ScribeAgent } from './agents/scribe-agent.js';
+import { BotForemanAgent } from './agents/bot-foreman-agent.js';
+import { DefenseAgent } from './agents/defense-agent.js';
+import { OpsAgent } from './agents/ops-agent.js';
 
 export class OpenClawImpl implements OpenClaw {
   private agentManager!: AgentManagerImpl;
@@ -41,6 +49,9 @@ export class OpenClawImpl implements OpenClaw {
 
   /** Track all agent IDs managed by this orchestrator for sync access. */
   private readonly agentIds = new Set<string>();
+
+  /** Concrete agent instances keyed by agentId, lazily instantiated on first tick. */
+  private readonly concreteAgents = new Map<string, BaseAgent>();
 
   constructor(logger: Logger, agentRepository?: AgentRepository) {
     this.logger = logger;
@@ -67,6 +78,7 @@ export class OpenClawImpl implements OpenClaw {
       ollamaUrl: `http://${config.ollama.host}:${config.ollama.port}`,
       maxConcurrentRequests: config.ollama.maxConcurrentRequests,
       timeoutMs: config.ollama.timeout,
+      ...(config.ollama.models ? { models: config.ollama.models } : {}),
     };
     this.llmRouter = new LLMRouterImpl(
       llmConfig,
@@ -93,10 +105,21 @@ export class OpenClawImpl implements OpenClaw {
     // 5. Mode Controller
     this.modeController = new ModeControllerImpl(this.logger);
 
-    // 6. Restore persisted agents from DB
+    // 6. Restore persisted agents from DB — deduplicate by role, keep most recent per role
     if (this.agentRepository) {
+      // Query all agents (active or stopped) to find the canonical set by role
       const persisted = this.agentRepository.findAll();
+
+      // Keep only the most recently active agent per role
+      const latestByRole = new Map<string, (typeof persisted)[0]>();
       for (const agent of persisted) {
+        const existing = latestByRole.get(agent.role);
+        if (!existing || agent.lastActiveAt > existing.lastActiveAt) {
+          latestByRole.set(agent.role, agent);
+        }
+      }
+
+      for (const agent of latestByRole.values()) {
         try {
           const agentId = await this.agentManager.create(agent.role, {
             civilizationId: agent.civilizationId,
@@ -188,7 +211,7 @@ export class OpenClawImpl implements OpenClaw {
    * Send a message between agents (hierarchy-enforced).
    * Delegates to MessageBus.send().
    */
-  async sendMessage(from: string, to: string, message: AgentMessage): Promise<void> {
+  async sendMessage(_from: string, _to: string, message: AgentMessage): Promise<void> {
     this.ensureInitialized();
     await this.messageBus.send(message);
   }
@@ -197,9 +220,9 @@ export class OpenClawImpl implements OpenClaw {
    * Broadcast a message from a planner agent to all agents.
    * Delegates to MessageBus.broadcast().
    */
-  async broadcast(from: string, message: AgentMessage): Promise<void> {
+  async broadcast(_from: string, message: AgentMessage): Promise<void> {
     this.ensureInitialized();
-    await this.messageBus.broadcast(from, message);
+    await this.messageBus.broadcast(_from, message);
   }
 
   /**
@@ -231,6 +254,116 @@ export class OpenClawImpl implements OpenClaw {
       startedAt: this.startedAt,
       civilizationId: 'default',
     };
+  }
+
+  /**
+   * Tick all active agents — instantiates concrete agent classes on first call
+   * (keyed by agentId) and calls their tick() method.
+   * After each successful tick, fires the optional broadcast callback with
+   * agent:state and agent:activity events so the dashboard stays current.
+   * Errors from individual agents are caught and logged so one bad agent
+   * cannot stall the entire loop.
+   */
+  async tickAllAgents(
+    broadcast?: (event: { type: string; [key: string]: unknown }) => void,
+  ): Promise<void> {
+    this.ensureInitialized();
+
+    for (const agentId of this.agentIds) {
+      const managed = this.agentManager.get(agentId);
+      if (!managed || managed.instance.status !== 'active') continue;
+
+      // Lazily instantiate the concrete agent class
+      if (!this.concreteAgents.has(agentId)) {
+        const agent = this.createConcreteAgent(agentId, managed.instance.role);
+        if (agent) this.concreteAgents.set(agentId, agent);
+      }
+
+      const agent = this.concreteAgents.get(agentId);
+      if (!agent) continue;
+
+      try {
+        await agent.tick();
+        managed.instance.lastActiveAt = new Date().toISOString();
+
+        if (broadcast) {
+          // Notify dashboard of updated agent status
+          broadcast({ type: 'agent:state', agentId, state: managed.instance.status });
+
+          // Surface the agent's last decision so the dashboard can display it
+          const decision = this.getLastDecision(agent, managed.instance.role);
+          if (decision) {
+            broadcast({
+              type: 'agent:activity',
+              agentId,
+              role: managed.instance.role,
+              decision,
+              timestamp: managed.instance.lastActiveAt,
+            });
+          }
+        }
+      } catch (err) {
+        this.logger.error(
+          `Agent tick failed: ${managed.instance.role} (${agentId})`,
+          err instanceof Error ? err : new Error(String(err)),
+          { agentId, role: managed.instance.role },
+        );
+        if (broadcast) {
+          broadcast({
+            type: 'alert',
+            severity: 'warning',
+            message: `Agent ${managed.instance.role} tick failed: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      }
+    }
+  }
+
+  /** Extract the most recent decision text from a concrete agent instance. */
+  private getLastDecision(agent: BaseAgent, role: AgentRole): string {
+    // Each concrete agent stores its last LLM output under a role-specific field
+    const a = agent as BaseAgent & Record<string, unknown>;
+    const decision =
+      (a['lastPlan'] as string | undefined) ??
+      (a['lastAllocation'] as string | undefined) ??
+      (a['lastAssignment'] as string | undefined) ??
+      (a['lastReport'] as string | undefined) ??
+      (a['lastDirective'] as string | undefined) ??
+      (a['lastDecision'] as string | undefined);
+    if (!decision) return '';
+    // Truncate to 200 chars for the dashboard
+    return decision.length > 200 ? `${decision.slice(0, 197)}...` : decision;
+  }
+
+  /** Factory: create the concrete agent class for a given role. */
+  private createConcreteAgent(agentId: string, role: AgentRole): BaseAgent | undefined {
+    const llmDelegate = (id: string, prompt: LLMPrompt): Promise<LLMResponse> =>
+      this.requestLLM(id, prompt);
+    const sendDelegate = (_from: string, to: string, content: string): Promise<void> => {
+      const msg: AgentMessage = {
+        id: `${agentId}-${Date.now()}`,
+        from: agentId,
+        to,
+        content,
+        timestamp: new Date().toISOString(),
+      };
+      return this.messageBus.send(msg).catch((err: unknown) => {
+        this.logger.warn(`Agent message send failed: ${String(err)}`, { agentId, to });
+      });
+    };
+
+    switch (role) {
+      case 'pharaoh':    return new PharaohAgent(agentId, llmDelegate, sendDelegate);
+      case 'vizier':     return new VizierAgent(agentId, llmDelegate, sendDelegate);
+      case 'architect':  return new ArchitectAgent(agentId, llmDelegate, sendDelegate);
+      case 'scribe':     return new ScribeAgent(agentId, llmDelegate, sendDelegate);
+      case 'bot-foreman': return new BotForemanAgent(agentId, llmDelegate, sendDelegate);
+      case 'defense':    return new DefenseAgent(agentId, llmDelegate, sendDelegate);
+      case 'ops':        return new OpsAgent(agentId, llmDelegate, sendDelegate);
+      default:
+        this.logger.warn(`No concrete agent class for role: ${role}`, { agentId });
+        return undefined;
+    }
   }
 
   /**

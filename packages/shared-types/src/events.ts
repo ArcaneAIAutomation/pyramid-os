@@ -18,6 +18,7 @@ export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
  */
 export type WebSocketEvent =
   | { type: 'agent:state'; agentId: string; state: AgentStatus }
+  | { type: 'agent:activity'; agentId: string; role: string; decision: string; timestamp: string }
   | { type: 'task:complete'; taskId: string; result: TaskResult }
   | { type: 'resource:update'; resourceType: string; level: number }
   | { type: 'bot:connect'; botId: string; server: string }

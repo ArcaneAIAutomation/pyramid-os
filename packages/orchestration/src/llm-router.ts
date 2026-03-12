@@ -23,6 +23,12 @@ export interface LLMRouterConfig {
   ollamaUrl: string;
   maxConcurrentRequests: number;
   timeoutMs: number;
+  /** Model overrides by tier — falls back to MODEL_MAP defaults if omitted */
+  models?: {
+    planner?: string;
+    operational?: string;
+    worker?: string;
+  };
 }
 
 /** Function that resolves an agent ID to its tier */
@@ -151,7 +157,7 @@ export class LLMRouterImpl implements LLMRouter {
       throw new Error(`Unknown agent "${agentId}": cannot determine tier for model selection.`);
     }
 
-    const model = MODEL_MAP[tier];
+    const model = this.config.models?.[tier] ?? MODEL_MAP[tier];
 
     this.logger.info('LLM request queued', {
       agentId,
@@ -258,7 +264,11 @@ export class LLMRouterImpl implements LLMRouter {
           prompt: prompt.userMessage,
           system: prompt.systemPrompt,
           stream: false,
-          options: prompt.context,
+          think: false,
+          options: {
+            num_predict: 150,
+            ...prompt.context,
+          },
         }),
         signal: controller.signal,
       });

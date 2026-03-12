@@ -17,6 +17,9 @@ importers:
       '@pyramid-os/logger':
         specifier: workspace:*
         version: link:packages/logger
+      '@pyramid-os/minecraft-controller':
+        specifier: workspace:*
+        version: link:packages/minecraft-controller
       '@pyramid-os/orchestration':
         specifier: workspace:*
         version: link:packages/orchestration

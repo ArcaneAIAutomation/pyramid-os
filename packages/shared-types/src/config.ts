@@ -11,6 +11,12 @@ export interface OllamaConfig {
   port: number;
   timeout: number;
   maxConcurrentRequests: number;
+  /** Model overrides by agent tier. Falls back to built-in defaults if omitted. */
+  models?: {
+    planner?: string;
+    operational?: string;
+    worker?: string;
+  };
 }
 
 /** Hard constraints limiting agent autonomy */

@@ -94,6 +94,15 @@ export class AgentRepository {
     });
   }
 
+  deleteByStatus(status: AgentStatus): number {
+    return withRetry(() => {
+      const result = this.db
+        .prepare<[string]>('DELETE FROM agents WHERE status = ?')
+        .run(status);
+      return result.changes;
+    });
+  }
+
   updateStatus(id: string, status: AgentStatus): void {
     withRetry(() => {
       this.db
