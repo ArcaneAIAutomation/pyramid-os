@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "references": [
+    { "path": "../shared-types" },
+    { "path": "../data-layer" },
+    { "path": "../logger" },
+    { "path": "../orchestration" },
+    { "path": "../society-engine" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

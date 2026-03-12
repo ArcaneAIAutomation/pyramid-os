@@ -1,0 +1,40 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Force LF for all source files
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+
+# Force LF for shell/config files
+*.sh text eol=lf
+.gitignore text eol=lf
+.prettierrc text eol=lf
+.eslintrc.js text eol=lf
+
+# Force CRLF for Windows-specific scripts
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary files — do not normalize
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.db binary
+*.sqlite binary
+*.gz binary
+*.zip binary
+*.tar binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

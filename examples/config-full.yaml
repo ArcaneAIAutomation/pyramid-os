@@ -1,0 +1,122 @@
+# PYRAMID OS — Full Configuration Reference
+#
+# This file documents every available configuration option with
+# descriptions and default values. Copy to config/default.yaml
+# and customize for your environment.
+
+# ─── Ollama LLM Backend ──────────────────────────────────────
+# Ollama must be running locally. PYRAMID OS never sends data
+# to external APIs.
+# Models required: gpt-oss:20b (Planner agents), qwen3 (all others)
+ollama:
+  host: localhost          # Ollama server hostname
+  port: 11434              # Ollama server port
+  timeout: 30000           # Request timeout in milliseconds
+  maxConcurrentRequests: 4 # Max parallel LLM requests to Ollama
+
+# ─── Minecraft Server Connections ─────────────────────────────
+# Define one or more server profiles. Bots connect using these.
+connections:
+  # Local LAN world — no authentication needed
+  - name: local
+    host: localhost
+    port: 25565
+    authMethod: none
+
+  # Remote server with username/password
+  # Uncomment and fill in to use:
+  # - name: remote-server
+  #   host: mc.example.com
+  #   port: 25565
+  #   authMethod: credentials
+  #   credentials:
+  #     username: ${MINECRAFT_USERNAME}   # Use env vars for secrets
+  #     password: ${MINECRAFT_PASSWORD}
+
+  # Microsoft account authentication
+  # Uncomment and fill in to use:
+  # - name: microsoft-server
+  #   host: mc.example.com
+  #   port: 25565
+  #   authMethod: microsoft
+  #   msToken: ${MICROSOFT_TOKEN}
+
+# ─── Safety Boundaries ───────────────────────────────────────
+# Hard constraints that apply in ALL operating modes, including
+# Free Thinking. These cannot be overridden by agents.
+safety:
+  prohibitedBlocks:          # Blocks agents are never allowed to place
+    - minecraft:tnt
+    - minecraft:lava
+    - minecraft:fire
+  prohibitedCommands:        # Server commands agents cannot execute
+    - /op
+    - /gamemode
+    - /kill
+    - /ban
+  maxDecisionTimeMs: 30000   # Max time for a single agent decision (ms)
+  maxActionsPerSecond: 10    # Rate limit per bot (token bucket)
+  maxReasoningLoops: 50      # Prevent infinite LLM reasoning loops
+
+# ─── Control Centre Dashboard ────────────────────────────────
+# Egyptian-themed Canvas/A2UI dashboard served via HTTP.
+controlCentre:
+  port: 3000               # Dashboard HTTP port
+  theme: egyptian           # Theme name (egyptian is the default)
+  refreshRateMs: 2000       # UI refresh interval in milliseconds
+
+# ─── Logging ─────────────────────────────────────────────────
+# Structured JSON logs to console and rotating files.
+logging:
+  level: info              # Log level: debug, info, warn, error
+  outputPath: logs/pyramid-os.log  # Log file path
+  maxFileSizeMb: 10        # Rotate logs when file exceeds this size
+
+# ─── REST API ────────────────────────────────────────────────
+# Fastify API server for external integrations and the CLI.
+api:
+  port: 8080               # API server port
+  apiKey: change-me-in-production  # API key for authentication (x-api-key header)
+  rateLimitPerMin: 100     # Max requests per minute per client
+
+# ─── Database ────────────────────────────────────────────────
+# SQLite database for structured persistence.
+database:
+  path: data/pyramid-os.db # SQLite database file path
+  poolSize: 5              # Connection pool size
+
+# ─── Workspace Directories ───────────────────────────────────
+# All paths are relative to the project root.
+workspace:
+  dataDir: data                  # General data directory
+  snapshotsDir: data/snapshots   # JSON snapshot exports
+  logsDir: logs                  # Log file directory
+
+# ─── Resource Thresholds ─────────────────────────────────────
+# When a resource drops below 'minimum', the Vizier is notified.
+# When it drops below 'critical', procurement tasks are prioritized.
+resourceThresholds:
+  - resourceType: sandstone
+    minimum: 500
+    critical: 100
+  - resourceType: limestone
+    minimum: 300
+    critical: 50
+  - resourceType: gold_block
+    minimum: 50
+    critical: 10
+  - resourceType: wood
+    minimum: 200
+    critical: 40
+  - resourceType: food
+    minimum: 100
+    critical: 20
+  - resourceType: tools
+    minimum: 20
+    critical: 5
+  - resourceType: stone
+    minimum: 400
+    critical: 80
+  - resourceType: iron
+    minimum: 100
+    critical: 20

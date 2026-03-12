@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "references": [
+    { "path": "packages/shared-types" },
+    { "path": "packages/logger" },
+    { "path": "packages/data-layer" },
+    { "path": "packages/blueprint" },
+    { "path": "packages/orchestration" },
+    { "path": "packages/society-engine" },
+    { "path": "packages/minecraft-controller" },
+    { "path": "packages/api" },
+    { "path": "packages/control-centre" },
+    { "path": "packages/cli" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,14 @@
+packages:
+  - "packages/orchestration"
+  - "packages/minecraft-controller"
+  - "packages/society-engine"
+  - "packages/control-centre"
+  - "packages/shared-types"
+  - "packages/data-layer"
+  - "packages/api"
+  - "packages/cli"
+  - "packages/logger"
+  - "packages/blueprint"
+allowBuilds:
+  better-sqlite3: true
+  esbuild: false

@@ -1,0 +1,75 @@
+ollama:
+  host: 192.168.1.142
+  port: 11434
+  timeout: 30000
+  maxConcurrentRequests: 4
+
+connections:
+  - name: local
+    host: localhost
+    port: 25565
+    authMethod: none
+
+safety:
+  prohibitedBlocks:
+    - minecraft:tnt
+    - minecraft:lava
+    - minecraft:fire
+  prohibitedCommands:
+    - /op
+    - /gamemode
+    - /kill
+    - /ban
+  maxDecisionTimeMs: 30000
+  maxActionsPerSecond: 10
+  maxReasoningLoops: 50
+
+controlCentre:
+  port: 3000
+  theme: egyptian
+  refreshRateMs: 2000
+
+logging:
+  level: info
+  outputPath: logs/pyramid-os.log
+  maxFileSizeMb: 10
+
+api:
+  port: 8080
+  apiKey: change-me-in-production
+  rateLimitPerMin: 100
+
+database:
+  path: data/pyramid-os.db
+  poolSize: 5
+
+workspace:
+  dataDir: data
+  snapshotsDir: data/snapshots
+  logsDir: logs
+
+resourceThresholds:
+  - resourceType: sandstone
+    minimum: 500
+    critical: 100
+  - resourceType: limestone
+    minimum: 300
+    critical: 50
+  - resourceType: gold_block
+    minimum: 50
+    critical: 10
+  - resourceType: wood
+    minimum: 200
+    critical: 40
+  - resourceType: food
+    minimum: 100
+    critical: 20
+  - resourceType: tools
+    minimum: 20
+    critical: 5
+  - resourceType: stone
+    minimum: 400
+    critical: 80
+  - resourceType: iron
+    minimum: 100
+    critical: 20

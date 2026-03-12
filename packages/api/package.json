@@ -1,0 +1,40 @@
+{
+  "name": "@pyramid-os/api",
+  "version": "0.1.0",
+  "description": "Fastify REST API and WebSocket server for PYRAMID OS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.0",
+    "@fastify/rate-limit": "^10.2.0",
+    "@fastify/websocket": "^11.0.0",
+    "@pyramid-os/data-layer": "workspace:*",
+    "@pyramid-os/logger": "workspace:*",
+    "@pyramid-os/orchestration": "workspace:*",
+    "@pyramid-os/shared-types": "workspace:*",
+    "@pyramid-os/society-engine": "workspace:*",
+    "fastify": "^5.2.0",
+    "fastify-plugin": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "ws": "^8.19.0"
+  }
+}

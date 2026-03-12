@@ -1,0 +1,22 @@
+# PYRAMID OS — Minimal Configuration
+#
+# This is the bare minimum configuration needed to run PYRAMID OS.
+# All other settings will use sensible defaults.
+# Copy this file to config/default.yaml and adjust as needed.
+
+# Ollama LLM backend — must be running locally
+ollama:
+  host: localhost
+  port: 11434
+
+# Minecraft server connection
+connections:
+  - name: local
+    host: localhost
+    port: 25565
+    authMethod: none  # Options: none, credentials, microsoft
+
+# API server
+api:
+  port: 8080
+  apiKey: change-me-in-production  # IMPORTANT: Change this before exposing the API

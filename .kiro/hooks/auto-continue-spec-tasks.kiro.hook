@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Auto-Continue Spec Tasks",
+  "description": "Automatically continues running spec tasks after each agent execution completes, enabling fully autonomous task execution without manual intervention",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check the tasks.md file at .kiro/specs/pyramid-os/tasks.md. If there are any tasks with status queued (marked with `- [~]`) or in-progress (marked with `- [-]`), continue executing them by running all remaining incomplete required tasks. Do not ask for confirmation — just proceed autonomously. If all tasks are complete, report completion."
+  }
+}

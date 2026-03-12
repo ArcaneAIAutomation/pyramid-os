@@ -1,0 +1,44 @@
+{
+  "name": "pyramid-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PYRAMID OS — Minecraft Egyptian Civilization Multi-Agent Automation System",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:property": "pnpm vitest run --config vitest.property.config.ts",
+    "lint": "eslint packages/*/src --ext .ts",
+    "format": "prettier --write \"packages/*/src/**/*.ts\" \"*.{json,yaml,md}\"",
+    "format:check": "prettier --check \"packages/*/src/**/*.ts\" \"*.{json,yaml,md}\"",
+    "clean": "pnpm -r clean",
+    "typecheck": "tsc --build",
+    "dev": "tsc --build --watch",
+    "dev:api": "pnpm --filter @pyramid-os/api run dev",
+    "dev:control-centre": "pnpm --filter @pyramid-os/control-centre run dev",
+    "dev:mock-minecraft": "echo \"Mock Minecraft server — not yet implemented\"",
+    "dev:mock-ollama": "echo \"Mock Ollama server — not yet implemented\"",
+    "seed": "pnpm --filter @pyramid-os/cli exec pyramid-os seed"
+  },
+  "dependencies": {
+    "@pyramid-os/shared-types": "workspace:*",
+    "@pyramid-os/logger": "workspace:*",
+    "@pyramid-os/data-layer": "workspace:*",
+    "@pyramid-os/orchestration": "workspace:*",
+    "@pyramid-os/society-engine": "workspace:*",
+    "@pyramid-os/api": "workspace:*",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

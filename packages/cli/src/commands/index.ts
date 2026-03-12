@@ -1,0 +1,11 @@
+export { registerSystemCommands } from './system.js';
+export { registerAgentCommands } from './agent.js';
+export { registerTaskCommands } from './task.js';
+export { registerResourceCommands } from './resource.js';
+export { registerBlueprintCommands } from './blueprint.js';
+export { registerSnapshotCommands } from './snapshot.js';
+export { registerConfigCommands } from './config.js';
+export { registerLogCommands } from './log.js';
+export { registerHealthCommands } from './health.js';
+export { registerCivilizationCommands } from './civilization.js';
+export { registerSeedCommands } from './seed.js';

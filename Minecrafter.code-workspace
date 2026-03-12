@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"kiroAgent.trustedCommands": [
+			"*.*",
+			"pnpm install 2>&1",
+			"pnpm --filter @pyramid-os/shared-types test 2>&1",
+			"pnpm install --filter @pyramid-os/logger 2>&1",
+			"*"
+		]
+	}
+}

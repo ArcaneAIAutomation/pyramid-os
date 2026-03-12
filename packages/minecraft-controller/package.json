@@ -1,0 +1,35 @@
+{
+  "name": "@pyramid-os/minecraft-controller",
+  "version": "0.1.0",
+  "description": "Mineflayer bot control service for PYRAMID OS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pyramid-os/shared-types": "workspace:*",
+    "@pyramid-os/blueprint": "workspace:*",
+    "@pyramid-os/data-layer": "workspace:*",
+    "@pyramid-os/logger": "workspace:*",
+    "mineflayer": "^4.23.0",
+    "mineflayer-pathfinder": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-check": "^3.23.2",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
