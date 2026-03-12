@@ -13,6 +13,7 @@ import { systemRoutes } from './system.js';
 import { snapshotRoutes } from './snapshots.js';
 import { metricsRoutes } from './metrics.js';
 import { civilizationRoutes } from './civilizations.js';
+import { seedRoutes } from './seeds.js';
 
 export type { ServiceContext } from './context.js';
 
@@ -31,4 +32,5 @@ export async function registerRoutes(
   await snapshotRoutes(server, ctx);
   await metricsRoutes(server, ctx);
   await civilizationRoutes(server, ctx);
+  await seedRoutes(server, ctx);
 }

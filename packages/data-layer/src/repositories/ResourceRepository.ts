@@ -42,6 +42,13 @@ export class ResourceRepository {
     return rows.map(rowToResource);
   }
 
+  findAllResources(): Resource[] {
+    const rows = this.db
+      .prepare<[], ResourceRow>('SELECT * FROM resources')
+      .all();
+    return rows.map(rowToResource);
+  }
+
   /**
    * Returns resources whose quantity is below the threshold's minimum level.
    */

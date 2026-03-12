@@ -1,22 +1,13 @@
-/**
- * Resource route handlers for PYRAMID OS API.
- * GET /resources — query resource inventory
- */
-
 import type { FastifyInstance } from 'fastify';
 import type { ServiceContext } from './context.js';
 
-export async function resourceRoutes(
-  server: FastifyInstance,
-  ctx: ServiceContext,
-): Promise<void> {
-  server.get('/resources', async () => {
-    if (ctx.societyEngine) {
-      // Delegate to society engine when wired
-      return [];
+export async function resourceRoutes(server: FastifyInstance, ctx: ServiceContext): Promise<void> {
+  server.get('/resources', async (request) => {
+    const { civilizationId } = request.query as Record<string, string | undefined>;
+    if (ctx.resourceRepository) {
+      if (civilizationId) return ctx.resourceRepository.findAll(civilizationId);
+      return ctx.resourceRepository.findAllResources();
     }
-
-    // Stub response
     return [];
   });
 }

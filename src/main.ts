@@ -10,7 +10,7 @@
 import { loadConfig } from '@pyramid-os/shared-types';
 import { createLogger } from '@pyramid-os/logger';
 import type { Logger, LogLevel } from '@pyramid-os/logger';
-import { DatabaseManager, AgentRepository, SnapshotManager } from '@pyramid-os/data-layer';
+import { DatabaseManager, AgentRepository, TaskRepository, ResourceRepository, BlueprintRepository, SnapshotManager, CivilizationManager } from '@pyramid-os/data-layer';
 import { OpenClawImpl } from '@pyramid-os/orchestration';
 import { SocietyEngine } from '@pyramid-os/society-engine';
 import { createServer, registerRoutes, WebSocketServer } from '@pyramid-os/api';
@@ -60,6 +60,10 @@ export async function main(): Promise<PyramidOSContext> {
   // 4. Create repositories
   const sqliteDb = db.getDb();
   const agentRepository = new AgentRepository(sqliteDb);
+  const taskRepository = new TaskRepository(sqliteDb);
+  const resourceRepository = new ResourceRepository(sqliteDb);
+  const blueprintRepository = new BlueprintRepository(sqliteDb);
+  const civilizationManager = new CivilizationManager(sqliteDb);
   const snapshotManager = new SnapshotManager(db, config.workspace.snapshotsDir ?? 'data/snapshots', 'default');
 
   // 5. Initialize OpenClaw orchestrator
@@ -84,6 +88,11 @@ export async function main(): Promise<PyramidOSContext> {
     openclaw,
     societyEngine,
     snapshotManager,
+    civilizationManager,
+    agentRepository,
+    taskRepository,
+    resourceRepository,
+    blueprintRepository,
   });
 
   // Register WebSocket server

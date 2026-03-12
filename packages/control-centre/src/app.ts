@@ -351,8 +351,10 @@ function generateDashboardHtml(apiPort: number, apiKey: string): string {
     const c = el('builds-content');
     if (!state.builds.length) { c.innerHTML = '<span class="dim">No active builds</span>'; return; }
     c.innerHTML = state.builds.map(b => {
-      const pct = Math.round(b.progress ?? b.percentComplete ?? 0);
-      return '<div style="margin-bottom:8px;"><div class="row"><span>' + esc(b.id || b.name || 'build') + '</span><span class="metric-val">' + pct + '%</span></div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
+      const pct = Math.round(b.progress?.percentComplete ?? b.progress ?? b.percentComplete ?? 0);
+      const name = b.name || b.id || 'build';
+      const type = b.type ? ' (' + esc(b.type) + ')' : '';
+      return '<div style="margin-bottom:8px;"><div class="row"><span>' + esc(name) + type + '</span><span class="metric-val">' + pct + '%</span></div><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
     }).join('');
   }
 

@@ -42,3 +42,16 @@ coverage/
 
 # pnpm
 .pnpm-store/
+
+# Minecraft server files
+world/
+libraries/
+versions/
+server.jar
+server.properties
+eula.txt
+banned-ips.json
+banned-players.json
+ops.json
+usercache.json
+whitelist.json

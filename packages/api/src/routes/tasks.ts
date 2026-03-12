@@ -1,51 +1,29 @@
-/**
- * Task route handlers for PYRAMID OS API.
- * GET /tasks — list tasks (filterable)
- * GET /tasks/:id — get task by ID
- */
-
 import type { FastifyInstance } from 'fastify';
 import type { ServiceContext } from './context.js';
 import type { ApiError } from '@pyramid-os/shared-types';
 
-export async function taskRoutes(
-  server: FastifyInstance,
-  ctx: ServiceContext,
-): Promise<void> {
+export async function taskRoutes(server: FastifyInstance, ctx: ServiceContext): Promise<void> {
   server.get('/tasks', async (request) => {
-    const { status, type, priority, agentId, civilizationId } = request.query as Record<
-      string,
-      string | undefined
-    >;
-
-    if (ctx.societyEngine) {
-      // Delegate to society engine when wired
-      return [];
+    const { status, type, priority, agentId, civilizationId } = request.query as Record<string, string | undefined>;
+    if (ctx.taskRepository) {
+      const filter: Record<string, string> = {};
+      if (status) filter['status'] = status;
+      if (type) filter['type'] = type;
+      if (priority) filter['priority'] = priority;
+      if (agentId) filter['agentId'] = agentId;
+      if (civilizationId) filter['civilizationId'] = civilizationId;
+      return ctx.taskRepository.findAll(filter as any);
     }
-
-    // Stub response
     return [];
   });
 
   server.get<{ Params: { id: string } }>('/tasks/:id', async (request, reply) => {
     const { id } = request.params;
-
-    if (!id) {
-      const error: ApiError = {
-        statusCode: 400,
-        error: 'Bad Request',
-        message: 'Task ID is required',
-        code: 'MISSING_TASK_ID',
-      };
-      return reply.status(400).send(error);
+    if (ctx.taskRepository) {
+      const task = ctx.taskRepository.findById(id);
+      if (task) return task;
     }
-
-    const error: ApiError = {
-      statusCode: 404,
-      error: 'Not Found',
-      message: `Task '${id}' not found`,
-      code: 'TASK_NOT_FOUND',
-    };
+    const error: ApiError = { statusCode: 404, error: 'Not Found', message: `Task '${id}' not found`, code: 'TASK_NOT_FOUND' };
     return reply.status(404).send(error);
   });
 }
