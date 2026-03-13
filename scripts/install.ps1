@@ -223,7 +223,14 @@ $configPath = Join-Path $ProjectRoot "config" "default.yaml"
 if (Test-Path $configPath) {
     Write-Ok "config/default.yaml already exists"
 } else {
-    Write-Info "Creating config/default.yaml with default values..."
+    $examplePath = Join-Path $ProjectRoot "config" "default.yaml.example"
+    if (Test-Path $examplePath) {
+        Write-Info "Copying config/default.yaml.example → config/default.yaml..."
+        Copy-Item $examplePath $configPath
+        Write-Ok "config/default.yaml created from example"
+        Write-Warn "IMPORTANT: Edit config/default.yaml and set a strong api.apiKey before exposing the API"
+    } else {
+        Write-Info "Creating config/default.yaml with default values..."
 
     $configDir = Join-Path $ProjectRoot "config"
     if (-not (Test-Path $configDir)) {
@@ -310,6 +317,8 @@ resourceThresholds:
 
     Set-Content -Path $configPath -Value $defaultConfig -Encoding UTF8
     Write-Ok "config/default.yaml created"
+    Write-Warn "IMPORTANT: Edit config/default.yaml and set a strong api.apiKey before exposing the API"
+    } # end else (no example file)
 }
 
 # ── 9. Health checks ────────────────────────────────────────────────────────

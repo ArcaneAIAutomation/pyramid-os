@@ -13,6 +13,11 @@ connections:
     host: localhost
     port: 25565
     authMethod: none
+    # For remote servers with credentials, use env vars:
+    # authMethod: credentials
+    # credentials:
+    #   username: ${MINECRAFT_USERNAME}
+    #   password: ${MINECRAFT_PASSWORD}
 
 safety:
   prohibitedBlocks:
@@ -40,7 +45,7 @@ logging:
 
 api:
   port: 8080
-  apiKey: change-me-in-production
+  apiKey: change-me-in-production   # REQUIRED: set a strong secret before exposing the API
   rateLimitPerMin: 100
 
 database:
